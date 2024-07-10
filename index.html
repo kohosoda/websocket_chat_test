@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat Service</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .chat-box {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            height: 400px;
+            overflow-y: scroll;
+            background-color: #f9f9f9;
+        }
+
+        .chat-input {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h3 class="text-center mt-4">Chat Service</h3>
+                <div class="chat-box" id="chatBox">
+                    <!-- Message -->
+                </div>
+                <div class="input-group chat-input">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="username"></span>
+                    </div>
+                    <input type="text" class="form-control" id="messageInput" placeholder="Type your message here...">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" id="sendButton">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        let connection = new WebSocket("http://localhost:8001/ws");
+
+        const chatBox = document.getElementById('chatBox');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // ユーザー名
+        let username = "User-" + Math.floor(Math.random() * 10000);
+        let usernameLabel = document.getElementById('username');
+        usernameLabel.textContent = username;
+
+        // WebSocket 通信確立時
+        connection.onopen = function (event) {
+            console.log("Connection established");
+        };
+
+        // WebSocket メッセージ受信時
+        connection.onmessage = function (event) {
+            console.log("Recieved meessage");
+
+            let messageData = JSON.parse(event.data);
+            displayMessage(messageData);
+        }
+
+        // メッセージ表示
+        function displayMessage(messageData) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('alert', 'alert-secondary', 'mt-2');
+            
+            const usernameElement = document.createElement('strong');
+            usernameElement.textContent = `${messageData.username}: `;
+            messageElement.appendChild(usernameElement);
+            
+            const messageTextElement = document.createElement('span');
+            messageTextElement.textContent = messageData.message;
+            messageElement.appendChild(messageTextElement);
+            
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // EventListener
+        document.addEventListener('DOMContentLoaded', () => {
+            messageInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    sendButton.click();
+                }
+            });
+
+            sendButton.addEventListener('click', () => {
+                const message = messageInput.value.trim();
+                if (message) {
+                    sendMessage = { username: username, message: message };
+                    connection.send(JSON.stringify(sendMessage));
+                    messageInput.value = '';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
